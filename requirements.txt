@@ -1,12 +1,4 @@
-# Core RL and Simulation Libraries
 stable-baselines3
 gymnasium
-pybullet
-pandas
-matplotlib
-scipy
-
-# PyBullet Drones dependencies
-# Note: gym-pybullet-drones itself is installed from the submodule, not this file.
 cycler
 transforms3d
