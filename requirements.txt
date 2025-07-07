@@ -1,38 +1,12 @@
-cloudpickle==3.1.1
-contourpy @ file:///Users/runner/miniforge3/conda-bld/contourpy_1744743161496/work
-cycler @ file:///home/conda/feedstock_root/build_artifacts/cycler_1733332471406/work
-Farama-Notifications==0.0.4
-filelock==3.18.0
-fonttools @ file:///Users/runner/miniforge3/conda-bld/fonttools_1751573399021/work
-fsspec==2025.5.1
--e git+https://github.com/utiasDSL/gym-pybullet-drones.git@2d8325d6f0da59f24d9d20c9c9ca354d4a82f5b7#egg=gym_pybullet_drones
-gymnasium==0.29.1
-iniconfig==2.1.0
-Jinja2==3.1.6
-kiwisolver @ file:///Users/runner/miniforge3/conda-bld/kiwisolver_1751493948140/work
-MarkupSafe==3.0.2
-matplotlib==3.10.3
-mpmath==1.3.0
-munkres==1.1.4
-networkx==3.5
-numpy==1.26.4
-packaging @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_packaging_1745345660/work
-pandas==2.3.1
-pillow @ file:///Users/runner/miniforge3/conda-bld/pillow_1751482124640/work
-pluggy==1.6.0
-pybullet @ file:///Users/runner/miniforge3/conda-bld/bullet_1747514837981/work
-Pygments==2.19.2
-pyparsing @ file:///home/conda/feedstock_root/build_artifacts/pyparsing_1743089729650/work
-pytest==8.4.1
-python-dateutil @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_python-dateutil_1751104122/work
-pytz==2025.2
-scipy==1.16.0
-six @ file:///home/conda/feedstock_root/build_artifacts/six_1733380938961/work
-stable_baselines3==2.6.0
-sympy==1.14.0
-torch==2.7.1
-tornado @ file:///Users/runner/miniforge3/conda-bld/tornado_1748003379534/work
-transforms3d==0.4.2
-typing_extensions==4.14.1
-tzdata==2025.2
-unicodedata2 @ file:///Users/runner/miniforge3/conda-bld/unicodedata2_1736692555874/work
+# Core RL and Simulation Libraries
+stable-baselines3
+gymnasium
+pybullet
+pandas
+matplotlib
+scipy
+
+# PyBullet Drones dependencies
+# Note: gym-pybullet-drones itself is installed from the submodule, not this file.
+cycler
+transforms3d
