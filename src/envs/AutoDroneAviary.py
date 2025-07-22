@@ -91,7 +91,6 @@ class AutoDroneAviary(BaseRLAviary):
         drone_pos = self._getDroneStateVector(0)[0:3]
         self.initial_distance = np.linalg.norm(self.current_target - drone_pos)
         self.best_distance = self.initial_distance
-        self.last_distance = self.initial_distance
         
         info.update({
             'target_position': self.current_target.copy(),
@@ -156,7 +155,8 @@ class AutoDroneAviary(BaseRLAviary):
             hover_reward = 10.0 * (1.0 - normalized_dist)
             max_velocity_bonus = 20.0
             velocity_bonus = max_velocity_bonus * np.exp(-speed * 5.0)
-            total_reward = hover_reward + velocity_bonus
+            perfect_hover_bonus = 5.0 if normalized_dist < 0.5 and speed < 0.1 else 0.0
+            total_reward = hover_reward + velocity_bonus + perfect_hover_bonus
         else:
             # Progress reward
             progress_reward = max(0, 2.0 - distance)
