@@ -52,6 +52,10 @@ class AutoDroneAviary(BaseRLAviary):
         self.target_marker_id = None
         self.success_sphere_id = None
 
+        # Add distance tracking
+        self.initial_distance = None
+        self.best_distance = float('inf')
+
         super().__init__(
             drone_model=drone_model,
             num_drones=1,
@@ -80,11 +84,23 @@ class AutoDroneAviary(BaseRLAviary):
             np.random.uniform(self.TARGET_BOUNDS[2][0], self.TARGET_BOUNDS[2][1])
         ])
         
+        obs, info = super().reset(seed=seed, options=options)
+        
         if self.GUI:
             self._add_target_markers()
         
-        obs, info = super().reset(seed=seed, options=options)
-        info['target_position'] = self.current_target.copy()
+        # Initialize distance tracking
+        drone_pos = self._getDroneStateVector(0)[0:3]
+        self.initial_distance = np.linalg.norm(self.current_target - drone_pos)
+        self.best_distance = self.initial_distance
+        self.last_distance = self.initial_distance
+        
+        info.update({
+            'target_position': self.current_target.copy(),
+            'initial_distance': self.initial_distance,
+            'success_threshold': self.SUCCESS_THRESHOLD
+        })
+        
         return obs, info
 
     def _observationSpace(self) -> spaces.Box:
@@ -131,9 +147,14 @@ class AutoDroneAviary(BaseRLAviary):
         drone_pos = self._getDroneStateVector(0)[0:3]
         distance = np.linalg.norm(self.current_target - drone_pos)
         
-        # closer = better
-        max_distance = 5.0
-        return max(0, 1.0 - distance / max_distance)
+        # Base distance reward
+        reward = max(0, 1.0 - distance / 5.0)
+        
+        # Success bonus
+        if distance < self.SUCCESS_THRESHOLD:
+            reward += 10.0
+        
+        return reward
 
     def _computeTerminated(self) -> bool:
         """
@@ -147,8 +168,20 @@ class AutoDroneAviary(BaseRLAviary):
         """
         Check if episode should be truncated (failure conditions or time limit).
         """
+        state = self._getDroneStateVector(0)
+        current_pos = state[0:3]
+            
+        # Time limit
+        if self.step_counter / self.PYB_FREQ > self.EPISODE_LEN_SEC:
+            return True
+            
+        # Distance failure
+        distance = np.linalg.norm(self.current_target - current_pos)
+        if distance > 6.0:
+            return True
+            
         return False
-
+    
     def _computeInfo(self) -> Dict[str, Any]:
         """
         Compute additional information for logging and debugging.
