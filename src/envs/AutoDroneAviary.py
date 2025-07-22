@@ -119,6 +119,8 @@ class AutoDroneAviary(BaseRLAviary):
     def _computeTerminated(self) -> bool:
         """
         Check if episode should be terminated (success).
+        Always returning Flase, allows the drone to continue hovering at 
+        the target until episode end or truncation (failure)
         """
         return False
 
@@ -141,3 +143,15 @@ class AutoDroneAviary(BaseRLAviary):
             'current_position': drone_pos.copy(),
             'distance_to_target': distance
         }
+    
+    def set_target(self, target_position: np.ndarray) -> None:
+        """
+        Manually set target position.
+        """
+        self.current_target = np.array(target_position)
+   
+    def get_target(self) -> np.ndarray:
+        """
+        Get current target position.
+        """
+        return self.current_target.copy() if self.current_target is not None else None
