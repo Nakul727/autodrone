@@ -125,9 +125,15 @@ class AutoDroneAviary(BaseRLAviary):
         """
         Calculate the reward signal for the current state and action.
         """
-        state = self._getDroneStateVector(0)
-        total_reward = 1
-        return total_reward
+        if self.current_target is None:
+            return 0.0
+        
+        drone_pos = self._getDroneStateVector(0)[0:3]
+        distance = np.linalg.norm(self.current_target - drone_pos)
+        
+        # closer = better
+        max_distance = 5.0
+        return max(0, 1.0 - distance / max_distance)
 
     def _computeTerminated(self) -> bool:
         """
