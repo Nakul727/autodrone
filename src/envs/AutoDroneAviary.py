@@ -79,14 +79,34 @@ class AutoDroneAviary(BaseRLAviary):
         Define observation space including target position.
         """
         base_obs_space = super()._observationSpace()
-        return base_obs_space
 
+        # Maximum relative target distance 
+        max_relative_dist = 5.0
+        
+        low = np.concatenate([
+            base_obs_space.low,
+            np.array([[-max_relative_dist, -max_relative_dist, -max_relative_dist]])
+        ], axis=1)
+        
+        high = np.concatenate([
+            base_obs_space.high,
+            np.array([[max_relative_dist, max_relative_dist, max_relative_dist]])
+        ], axis=1)
+        
+        return spaces.Box(low=low, high=high, dtype=np.float32)
+    
     def _computeObs(self) -> np.ndarray:
         """
-        Compute observation including drone state. 
+        Compute observation including drone state and relative target position.
         """
         drone_obs = super()._computeObs()
-        return drone_obs
+        
+        # Find relative target position for current state
+        drone_pos = self._getDroneStateVector(0)[0:3]
+        relative_target = self.current_target - drone_pos
+        relative_target_2d = relative_target.reshape(1, 3)
+
+        return np.concatenate([drone_obs, relative_target_2d], axis=1).astype(np.float32)
 
     def _computeReward(self):
         """
@@ -100,13 +120,13 @@ class AutoDroneAviary(BaseRLAviary):
         """
         Check if episode should be terminated (success).
         """
-        return True
+        return False
 
     def _computeTruncated(self) -> bool:
         """
         Check if episode should be truncated (failure conditions or time limit).
         """
-        return True
+        return False
 
     def _computeInfo(self) -> Dict[str, Any]:
         """
