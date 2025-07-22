@@ -144,17 +144,23 @@ class AutoDroneAviary(BaseRLAviary):
         if self.current_target is None:
             return 0.0
         
-        drone_pos = self._getDroneStateVector(0)[0:3]
-        distance = np.linalg.norm(self.current_target - drone_pos)
+        state = self._getDroneStateVector(0)
+        pos = state[0:3]
+        vel = state[10:13]
+        speed = np.linalg.norm(vel)
+        distance = np.linalg.norm(self.current_target - pos)
         
-        # Base distance reward
-        reward = max(0, 1.0 - distance / 5.0)
-        
-        # Success bonus
         if distance < self.SUCCESS_THRESHOLD:
-            reward += 10.0
-        
-        return reward
+            # Hovering reward
+            normalized_dist = distance / self.SUCCESS_THRESHOLD
+            hover_reward = 10.0 * (1.0 - normalized_dist)
+            velocity_bonus = 20.0 * np.exp(-speed * 5.0)
+            return hover_reward + velocity_bonus
+        else:
+            # Progress reward
+            progress_reward = max(0, 2.0 - distance)
+            velocity_penalty = speed * 0.1
+            return progress_reward - velocity_penalty - 0.01
 
     def _computeTerminated(self) -> bool:
         """
