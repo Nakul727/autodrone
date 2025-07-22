@@ -170,18 +170,36 @@ class AutoDroneAviary(BaseRLAviary):
         """
         state = self._getDroneStateVector(0)
         current_pos = state[0:3]
+
+        # Boundary violations
+        # Check if drone has moved outside the allowed flight area
+        # Manually set as using TARGET_BOUNDS requires reading variable muliple times
+        if (abs(current_pos[0]) > 3.0 or
+            abs(current_pos[1]) > 3.0 or
+            current_pos[2] > 3.0 or
+            current_pos[2] < 0.05):
+            return True
             
-        # Time limit
+        # Time limit exceeded
+        # Convert step counter to elapsed time and check against episode limit
         if self.step_counter / self.PYB_FREQ > self.EPISODE_LEN_SEC:
             return True
             
-        # Distance failure
+        # Distance failure (too far from target)
+        # Max allowed distance = 6 meters (manually set)
         distance = np.linalg.norm(self.current_target - current_pos)
         if distance > 6.0:
             return True
             
+        # Speed failure (moving too fast)
+        # Max velocity = 10 ms/s
+        velocity = state[10:13]
+        speed = np.linalg.norm(velocity)
+        if speed > 10.0:
+            return True
+
         return False
-    
+
     def _computeInfo(self) -> Dict[str, Any]:
         """
         Compute additional information for logging and debugging.
