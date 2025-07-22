@@ -41,20 +41,18 @@ class AutoDroneAviary(BaseRLAviary):
         self.TARGET_BOUNDS = target_bounds if target_bounds is not None else \
         np.array([[-2.0, 2.0], [-2.0, 2.0], [0.2, 2.0]])
     
-        # Target state
-        self.current_target = None
-
         # Episode constants
         self.SUCCESS_THRESHOLD = success_threshold
         self.EPISODE_LEN_SEC = episode_len_sec
 
-        # Target GUI element id's
-        self.target_marker_id = None
-        self.success_sphere_id = None
-
-        # Add distance tracking
+        # Target state variables
+        self.current_target = None
         self.initial_distance = None
         self.best_distance = float('inf')
+
+        # Target GUI elements
+        self.target_marker_id = None
+        self.success_sphere_id = None
 
         super().__init__(
             drone_model=drone_model,
@@ -150,17 +148,22 @@ class AutoDroneAviary(BaseRLAviary):
         speed = np.linalg.norm(vel)
         distance = np.linalg.norm(self.current_target - pos)
         
+        total_reward = 0.0
+
         if distance < self.SUCCESS_THRESHOLD:
             # Hovering reward
             normalized_dist = distance / self.SUCCESS_THRESHOLD
             hover_reward = 10.0 * (1.0 - normalized_dist)
-            velocity_bonus = 20.0 * np.exp(-speed * 5.0)
-            return hover_reward + velocity_bonus
+            max_velocity_bonus = 20.0
+            velocity_bonus = max_velocity_bonus * np.exp(-speed * 5.0)
+            total_reward = hover_reward + velocity_bonus
         else:
             # Progress reward
             progress_reward = max(0, 2.0 - distance)
             velocity_penalty = speed * 0.1
-            return progress_reward - velocity_penalty - 0.01
+            total_reward = progress_reward - velocity_penalty - 0.01
+
+        return total_reward
 
     def _computeTerminated(self) -> bool:
         """
@@ -185,7 +188,13 @@ class AutoDroneAviary(BaseRLAviary):
             current_pos[2] > 3.0 or
             current_pos[2] < 0.05):
             return True
-            
+
+        # Attitude failures
+        # High roll and pitch angles
+        roll, pitch = state[7], state[8]
+        if abs(roll) > 0.4 or abs(pitch) > 0.4:
+            return True
+        
         # Time limit exceeded
         # Convert step counter to elapsed time and check against episode limit
         if self.step_counter / self.PYB_FREQ > self.EPISODE_LEN_SEC:
@@ -210,14 +219,40 @@ class AutoDroneAviary(BaseRLAviary):
         """
         Compute additional information for logging and debugging.
         """
-        drone_pos = self._getDroneStateVector(0)[0:3]
-        distance = np.linalg.norm(self.current_target - drone_pos) if self.current_target is not None else 0.0
+        state = self._getDroneStateVector(0)
+        current_pos = state[0:3]
+        velocity = state[10:13]
+        
+        current_distance = np.linalg.norm(self.current_target - current_pos) if self.current_target is not None else 0.0
+        speed = np.linalg.norm(velocity)
+        
+        # Calculate progress ratio (how much closer we've gotten)
+        # 0 = no progress, 1 = reached target, >1 = overshot
+        progress_ratio = 0.0
+        if self.initial_distance is not None and self.initial_distance > 0:
+            progress_ratio = (self.initial_distance - current_distance) / self.initial_distance
+        
+        # Check if drone is currently at target (within success threshold)
+        at_target = current_distance < self.SUCCESS_THRESHOLD if self.current_target is not None else False
         
         return {
-            'step': self.step_counter,
             'target_position': self.current_target.copy() if self.current_target is not None else np.zeros(3),
-            'current_position': drone_pos.copy(),
-            'distance_to_target': distance
+            'current_position': current_pos.copy(),
+            
+            'distance_to_target': float(current_distance),
+            'best_distance': float(self.best_distance) if self.best_distance != float('inf') else 0.0,
+            'initial_distance': float(self.initial_distance) if self.initial_distance is not None else 0.0,
+            'progress_ratio': float(progress_ratio),
+            
+            'current_speed': float(speed),
+            
+            'episode_step': self.step_counter,
+            'time_elapsed': float(self.step_counter / self.PYB_FREQ),
+            
+            'success_threshold': self.SUCCESS_THRESHOLD,
+            'is_success': at_target,
+            'at_target': at_target,
+            'hover_quality': max(0, 1.0 - speed) if at_target else 0.0
         }
     
     def set_target(self, target_position: np.ndarray) -> None:
