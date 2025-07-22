@@ -29,7 +29,9 @@ class AutoDroneAviary(BaseRLAviary):
         record: bool = False,
         obs: ObservationType=ObservationType.KIN,
         act: ActionType=ActionType.RPM,
-        target_bounds: Optional[np.ndarray] = None
+        target_bounds: Optional[np.ndarray] = None,
+        success_threshold: float = 0.1,
+        episode_len_sec: int = 15,
     ) -> None: 
         """
         Initialize AutoDroneAviary environment.
@@ -41,6 +43,14 @@ class AutoDroneAviary(BaseRLAviary):
     
         # Target state
         self.current_target = None
+
+        # Episode constants
+        self.SUCCESS_THRESHOLD = success_threshold
+        self.EPISODE_LEN_SEC = episode_len_sec
+
+        # Target GUI element id's
+        self.target_marker_id = None
+        self.success_sphere_id = None
 
         super().__init__(
             drone_model=drone_model,
@@ -69,6 +79,9 @@ class AutoDroneAviary(BaseRLAviary):
             np.random.uniform(self.TARGET_BOUNDS[1][0], self.TARGET_BOUNDS[1][1]),
             np.random.uniform(self.TARGET_BOUNDS[2][0], self.TARGET_BOUNDS[2][1])
         ])
+        
+        if self.GUI:
+            self._add_target_markers()
         
         obs, info = super().reset(seed=seed, options=options)
         info['target_position'] = self.current_target.copy()
@@ -149,9 +162,52 @@ class AutoDroneAviary(BaseRLAviary):
         Manually set target position.
         """
         self.current_target = np.array(target_position)
+        if self.GUI:
+            self._add_target_markers()
    
     def get_target(self) -> np.ndarray:
         """
         Get current target position.
         """
         return self.current_target.copy() if self.current_target is not None else None
+    
+    def _add_target_markers(self):
+        """Add visual markers for target position and success threshold."""
+        if not self.GUI or self.current_target is None:
+            return
+            
+        # Remove existing markers
+        if self.target_marker_id is not None:
+            p.removeBody(self.target_marker_id, physicsClientId=self.CLIENT)
+        if self.success_sphere_id is not None:
+            p.removeBody(self.success_sphere_id, physicsClientId=self.CLIENT)
+        
+        # Create target marker (red dot)
+        target_visual = p.createVisualShape(
+            shapeType=p.GEOM_SPHERE,
+            radius=0.02,
+            rgbaColor=[1, 0, 0, 1],
+            physicsClientId=self.CLIENT
+        )
+        
+        self.target_marker_id = p.createMultiBody(
+            baseMass=0,
+            baseVisualShapeIndex=target_visual,
+            basePosition=self.current_target,
+            physicsClientId=self.CLIENT
+        )
+        
+        # Create success sphere (transparent red)
+        success_visual = p.createVisualShape(
+            shapeType=p.GEOM_SPHERE,
+            radius=self.SUCCESS_THRESHOLD,
+            rgbaColor=[1, 0, 0, 0.2],
+            physicsClientId=self.CLIENT
+        )
+        
+        self.success_sphere_id = p.createMultiBody(
+            baseMass=0,
+            baseVisualShapeIndex=success_visual,
+            basePosition=self.current_target,
+            physicsClientId=self.CLIENT
+        )
