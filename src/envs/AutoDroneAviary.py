@@ -1,31 +1,39 @@
 """
-AutodroneAviary.py
-This class implements our custom drone agent
-It inherits the BaseRLAvairy and BaseAviary classes that provide useful 
-functions that handle physics and simulation in Pybullet environment.
+AutoDroneAviary.py
+Custom drone environment inheriting from BaseRLAviary.
+Provides point-to-point navigation task for reinforcement learning.
 """
 
 import numpy as np
+import pybullet as p
 import gymnasium as gym
+from gymnasium import spaces
+from typing import Dict, Any, Optional
 from gym_pybullet_drones.envs.BaseRLAviary import BaseRLAviary
 from gym_pybullet_drones.utils.enums import DroneModel, Physics, ActionType, ObservationType
 
 class AutoDroneAviary(BaseRLAviary):
+    """
+    Custom drone environment for point-to-point navigation.
+    """ 
 
     def __init__(
         self,
         drone_model: DroneModel=DroneModel.CF2X,
-        initial_xyzs=None,
-        initial_rpys=None,
+        initial_xyzs: Optional[np.ndarray] = None,
+        initial_rpys: Optional[np.ndarray] = None,
         physics: Physics=Physics.PYB,
         pyb_freq: int = 240,
         ctrl_freq: int = 30,
-        gui=False,
-        record=False,
+        gui: bool = False,
+        record: bool = False,
         obs: ObservationType=ObservationType.KIN,
         act: ActionType=ActionType.RPM
-    ):
-        
+    ) -> None: 
+        """
+        Initialize AutoDroneAviary environment.
+        """
+
         super().__init__(
             drone_model=drone_model,
             num_drones=1,
@@ -40,50 +48,47 @@ class AutoDroneAviary(BaseRLAviary):
             act=act
         )
 
-    def _observationSpace(self):
+    def _observationSpace(self) -> spaces.Box:
         """
-        Define the observation space dimensions and bounds for the environment.
-        Should return a gymnasium.spaces.Box defining the shape and limits
-        of the observation vector that the agent will receive.
+        Define observation space.
         """
-        pass
+        base_obs_space = super()._observationSpace()
+        return base_obs_space 
 
-    def _computeObs(self):
+    def _computeObs(self) -> np.ndarray:
         """
-        Compute and return the current observation vector for the drone.
-        This should include drone state information like position, velocity,
-        orientation, and any task-specific observations.
+        Compute observation including drone state. 
         """
-        pass
+        drone_obs = super()._computeObs()
+        return drone_obs
 
     def _computeReward(self):
         """
         Calculate the reward signal for the current state and action.
-        Should return a scalar reward value that guides the learning process
-        based on task objectives like reaching targets, avoiding crashes, etc.
         """
-        pass
+        state = self._getDroneStateVector(0)
 
-    def _computeTerminated(self):
-        """
-        Determine if the episode should terminate due to success or failure.
-        Should return True if the drone has crashed, completed the task,
-        or violated safety constraints.
-        """
-        pass
+        # Reward will be based on the state
+        # Temporary: returns 1
+        total_reward = 1
+        return total_reward
 
-    def _computeTruncated(self):
+    def _computeTerminated(self) -> bool:
         """
-        Determine if the episode should be truncated due to time limits.
-        Should return True if maximum episode length is reached or
-        other truncation conditions are met.
+        Check if episode should be terminated (success).
         """
-        pass
+        return True
 
-    def _computeInfo(self):
+    def _computeTruncated(self) -> bool:
         """
-        Compute additional information dictionary for debugging and monitoring.
-        Should return a dictionary containing useful metrics like distance
-        to target, energy consumption, or other diagnostic information.
+        Check if episode should be truncated (failure conditions or time limit).
         """
-        pass
+        return True
+
+    def _computeInfo(self) -> Dict[str, Any]:
+        """
+        Compute additional information for logging and debugging.
+        """
+
+        debug_info = "debug"
+        return {'debug': debug_info}
