@@ -8,7 +8,7 @@ from stable_baselines3 import PPO
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 from src.envs.AutoDroneAviary import AutoDroneAviary
 
-def create_env(gui=False, record=False, start = None):
+def create_env(gui=False, record=False, start=None):
     return AutoDroneAviary(
         gui=gui,
         record=record,
@@ -18,12 +18,13 @@ def create_env(gui=False, record=False, start = None):
         episode_len_sec=12
     )
 
-def evaluate_single(model, env, episodes, speed):
+def evaluate_single(model, env, episodes, speed, start_pos=None):
     success_count = 0
     rewards = []
 
     for ep in range(episodes):
-        #env.INIT_XYZS = np.array([[np.random.uniform(-2, 2), np.random.uniform(-2, 2), 1.0]])
+        if start_pos is not None:
+            env.INIT_XYZS = init_pos(start_pos)
         obs, info = env.reset()
         total_reward = 0
         done = False
@@ -47,6 +48,8 @@ def evaluate_single(model, env, episodes, speed):
     print("\n--------------------------")
 
 def evaluate_sequence(model, env, num_targets=5, speed=0.01):
+    if start_pos is not None:
+        env.INIT_XYZS = init_pos(start_pos)
     obs, info = env.reset()
     total_reward = 0
     success_count = 0
@@ -76,13 +79,31 @@ def evaluate_sequence(model, env, num_targets=5, speed=0.01):
     print(f"Total Reward: {total_reward:.2f}")
     print("\n--------------------------")
 
+
+def init_pos(pos):
+    '''
+    Processes tuple start position.
+    (999, 999, 999) results in random position.
+    Returns np.array of shape (1, 3)
+    '''
+    if np.array_equal(pos, np.array([999, 999, 999])):
+        xyz = np.array([[np.random.uniform(-1.0, 1.0),
+                         np.random.uniform(-1.0, 1.0),
+                         np.random.uniform(0.3, 2.0)]])
+    else:
+        xyz = np.array([pos])
+    return xyz
+
+
+
+
 def main():
     parser = argparse.ArgumentParser(description="Evaluate trained drone policies.")
     parser.add_argument("model_path", help="Path to trained model")
     parser.add_argument("--task", choices=["evaluate_single", "evaluate_sequence"], default="evaluate_single", help="Task type")
-    #parser.add_argument("--start_pos", type=lambda s: np.array(eval(s)), default=None, 
-    #        help='Starting position as a tuple, e.g. "(1, 1, 1.2)". Random: "(999, 999, 999)"
-    #        ')
+    parser.add_argument("--start_pos", type=lambda s: np.array(eval(s)), default=None, 
+            help="""Starting position as a tuple, e.g. "(1.0, 1.0, 1.2)". Random: "(999, 999, 999)"
+            """)
     parser.add_argument("--episodes", type=int, default=5, help="Number of episodes to run")
     parser.add_argument("--gui", action="store_true", help="Enable GUI")
     parser.add_argument("--speed", type=float, default=0.01, help="Delay per step (in seconds)")
@@ -91,13 +112,12 @@ def main():
     args = parser.parse_args()
 
     model = PPO.load(args.model_path)
-    #env = create_env(gui=args.gui, record=args.record, start_pos=args.start_pos)
     env = create_env(gui=args.gui, record=args.record)
 
     if args.task == "evaluate_single":
-        evaluate_single(model, env, args.episodes, args.speed)
+        evaluate_single(model, env, args.episodes, args.speed, start_pos=args.start_pos)
     elif args.task == "evaluate_sequence":
-        evaluate_sequence(model, env, num_targets=6, speed=args.speed)
+        evaluate_sequence(model, env, num_targets=6, speed=args.speed, start_pos=args.start_pos)
 
     env.close()
 
