@@ -17,8 +17,7 @@ def evaluate_single(model, env, episodes, speed, start_pos=None):
     rewards = []
 
     for ep in range(episodes):
-        if start_pos is not None:
-            env.INIT_XYZS = init_pos(start_pos)
+        env.INIT_XYZS = init_pos(start_pos)
 
         obs, info = env.reset()
         total_reward = 0

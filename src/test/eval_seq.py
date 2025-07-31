@@ -13,8 +13,7 @@ def evaluate_sequence(model, env, num_targets=5, speed=0.01, start_pos=None):
         speed: Delay between steps (in seconds).
         start_pos: Optional starting position.
     """
-    if start_pos is not None:
-        env.INIT_XYZS = init_pos(start_pos)
+    env.INIT_XYZS = init_pos(start_pos)
 
     obs, info = env.reset()
     total_reward = 0

@@ -29,7 +29,7 @@ def create_env(gui=False, record=False, start=None):
 def init_pos(pos):
     """
     Converts a user-supplied tuple into a 1x3 array.
-    If (999, 999, 999) is given, generate a random position.
+    If None is given, generate a random position.
 
     Args:
         pos: Tuple or array of (x, y, z)
@@ -37,7 +37,7 @@ def init_pos(pos):
     Returns:
         Numpy array of shape (1, 3)
     """
-    if np.array_equal(pos, np.array([999, 999, 999])):
+    if pos is None:
         return np.array([[np.random.uniform(-1.0, 1.0),
                           np.random.uniform(-1.0, 1.0),
                           np.random.uniform(0.3, 2.0)]])
@@ -55,7 +55,7 @@ def parse_args():
     parser.add_argument("model_path", nargs='?', help="Path to trained model")
     parser.add_argument("--task", choices=["evaluate_single", "evaluate_sequence"], default="evaluate_single", help="Task type")
     parser.add_argument("--start_pos", type=lambda s: np.array(eval(s)), default=None,
-        help="""Starting position as a tuple, e.g. "(1.0, 1.0, 1.2)". Use "(999, 999, 999)" for random.""")
+        help="""Starting position as a tuple, e.g. "(1.0, 1.0, 1.2)". Default random""")
     parser.add_argument("--episodes", type=int, default=5, help="Number of episodes to run")
     parser.add_argument("--targets", type=int, default=6, help="Number of targets")
     parser.add_argument("--gui", action="store_true", help="Enable GUI")
@@ -78,15 +78,13 @@ def prompt_args():
     if task not in ["evaluate_single", "evaluate_sequence"]:
         task = "evaluate_single"
 
-    start_pos_input = input('Enter start position as tuple (e.g. "1.0, 1.0, 1.2") or "random": ').strip()
-    if start_pos_input.lower() == "random":
-        start_pos = np.array([999, 999, 999])
-    elif start_pos_input:
+    start_pos_input = input('Enter start position as tuple (e.g. "1.0, 1.0, 1.2") (default: random): ').strip()
+    if start_pos_input is not None:
         try:
             start_pos = np.array([float(x) for x in start_pos_input.split(",")])
         except:
             print("Invalid format. Falling back to random start.")
-            start_pos = np.array([999, 999, 999])
+            start_pos = None
     else:
         start_pos = None
 
