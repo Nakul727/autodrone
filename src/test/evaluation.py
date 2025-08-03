@@ -59,4 +59,11 @@ def evaluate_model(model_path, n_episodes=5):
 
 if __name__ == "__main__":
     model_path = input("Enter model path: ").strip()
+    #model_path = "src/train/models/autodrone_model_final"   # since training script stores model at (fixed) predefined location, makes sense to hardcode
+    
+    if not os.path.exists(model_path):
+        print(f"Error: Model file not found at {model_path}")
+        print("Make sure training has completed successfully.")
+        exit(1)
+
     evaluate_model(model_path)

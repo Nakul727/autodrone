@@ -22,7 +22,7 @@ def create_env(gui=False, record=False, start=None):
         record=record,
         initial_xyzs=start,
         target_bounds=np.array([[-1.0, 1.0], [-1.0, 1.0], [0.5, 1.5]]),
-        success_threshold=0.15,
+        success_threshold=0.05,
         episode_len_sec=12
     )
 
@@ -52,7 +52,7 @@ def parse_args():
         argparse.Namespace with parsed values.
     """
     parser = argparse.ArgumentParser(description="Evaluate trained drone policies.")
-    parser.add_argument("model_path", nargs='?', help="Path to trained model")
+    parser.add_argument("model_path", nargs='?', default="src/train/models/autodrone_model_final", help="Path to trained model")
     parser.add_argument("--task", choices=["evaluate_single", "evaluate_sequence"], default="evaluate_single", help="Task type")
     parser.add_argument("--start_pos", type=lambda s: np.array(eval(s)), default=None,
         help="""Starting position as a tuple, e.g. "(1.0, 1.0, 1.2)". Default random""")
@@ -73,7 +73,7 @@ def prompt_args():
     print("==== AutoDrone Evaluation Interface ====")
 
     model_path = input("Enter model path (e.g. ./models/autodrone.zip): ").strip()
-
+    # model_path = "src/train/models/autodrone_model_final"
     task = input("Choose task [evaluate_single / evaluate_sequence] (default: evaluate_single): ").strip()
     if task not in ["evaluate_single", "evaluate_sequence"]:
         task = "evaluate_single"

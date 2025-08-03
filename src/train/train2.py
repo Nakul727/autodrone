@@ -31,13 +31,9 @@ class PerformanceCallback(BaseCallback):
         self.step_count = 0
     
     def _on_step(self) -> bool:
-        # Just track step count for now
+        # just need to track step count for now
         self.step_count += 1
-        
-        # We'll let Stable Baselines3 handle the actual metric logging
-        # This callback is mainly for custom tracking if needed
-        
-        return True  # Continue training
+        return True 
 
 
 class ProgressCallback(BaseCallback):
@@ -79,7 +75,7 @@ def create_train_env():
         episode_len_sec=12
     )
 
-# def train_model(total_timesteps=500000):
+# def train_model(total_timesteps=500000):   fallback simple implementation
 #     """
 #     Train the PPO model
 #     """
