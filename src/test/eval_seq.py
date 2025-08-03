@@ -46,4 +46,3 @@ def evaluate_sequence(model, env, num_targets=5, speed=0.01, start_pos=None):
     print(f"Reached {success_count}/{num_targets} targets")
     print(f"Total Reward: {total_reward:.2f}")
     print("\n--------------------------")
-

@@ -119,4 +119,3 @@ def prompt_args():
         speed=speed,
         record=record
     )
-

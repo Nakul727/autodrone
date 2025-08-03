@@ -3,3 +3,5 @@ gymnasium
 cycler
 transforms3d
 gym
+tqdm
+tensorboard

@@ -40,4 +40,3 @@ def evaluate_single(model, env, episodes, speed, start_pos=None):
     print(f"Success Rate: {success_count}/{episodes} = {success_count / episodes:.2%}")
     print(f"Average Reward: {np.mean(rewards):.2f}")
     print("\n--------------------------")
-
