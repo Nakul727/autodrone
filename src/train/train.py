@@ -11,6 +11,7 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import EvalCallback, CheckpointCallback, BaseCallback
 from stable_baselines3.common.monitor import Monitor
 from helper import create_env
+from helper import path_from_dir
 
 
 # Add project root to path
@@ -35,6 +36,7 @@ def train_model(total_timesteps=100000, model_name="autodrone_ppo"):
     os.makedirs(save_dir, exist_ok=True)
     os.makedirs(log_dir, exist_ok=True)
     
+    save_dir = path_from_dir(save_dir, "models")
     print(f"Model save path: {save_dir}")
     print(f"Total timesteps: {total_timesteps:,}")
     
@@ -100,7 +102,9 @@ def train_model(total_timesteps=100000, model_name="autodrone_ppo"):
         final_model_path = os.path.join(save_dir, "final_model.zip")
         model.save(final_model_path)
 
+        final_model_path = path_from_dir(final_model_path, "models")
         print(f"Model saved: {final_model_path}")
+        
         
         return model, save_dir, log_dir
         
@@ -108,6 +112,7 @@ def train_model(total_timesteps=100000, model_name="autodrone_ppo"):
         print(f"\nTraining interrupted!")
         interrupted_model_path = os.path.join(save_dir, "interrupted_model.zip")
         model.save(interrupted_model_path)
+        interrupted_model_path = path_from_dir(interrupted, "models")
         print(f"Model saved: {interrupted_model_path}")
         return model, save_dir, log_dir
 
@@ -124,7 +129,9 @@ def main():
     model, save_dir, log_dir = train_model(total_timesteps=timesteps, model_name=model_name)
     
     print(f"\nTraining complete!")
-    print(f"Model directory: {save_dir}")
+    save_dir = path_from_dir(save_dir, "models")
+    print(f"Model save path: {save_dir}")
+    log_dir = path_from_dir(log_dir, "logs")
     print(f"Log directory: {log_dir}")
 
 if __name__ == "__main__":
