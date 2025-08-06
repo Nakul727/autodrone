@@ -58,6 +58,28 @@ class AutoDroneAviaryGui(AutoDroneAviary):
             random_xyz=random_xyz,
             start_bounds=start_bounds
         )
+        
+        # Configure clean GUI after initialization
+        self._configure_clean_gui()
+
+    def _configure_clean_gui(self):
+        """Configure PyBullet GUI visualization."""
+        if not self.GUI:
+            return
+            
+        # Remove all side panels and debug info 
+        p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0, physicsClientId=self.CLIENT)
+        p.configureDebugVisualizer(p.COV_ENABLE_WIREFRAME, 0, physicsClientId=self.CLIENT)
+        p.configureDebugVisualizer(p.COV_ENABLE_SHADOWS, 0, physicsClientId=self.CLIENT)
+        
+        # Set camera for optimal square view
+        p.resetDebugVisualizerCamera(
+            cameraDistance=3.0,
+            cameraYaw=45,
+            cameraPitch=-30,
+            cameraTargetPosition=[0, 0, 0.5],
+            physicsClientId=self.CLIENT
+        )
 
     def reset(self, seed: Optional[int] = None, options: Optional[Dict] = None) -> Tuple[np.ndarray, Dict]:
         """
@@ -86,14 +108,20 @@ class AutoDroneAviaryGui(AutoDroneAviary):
             
         # Remove existing markers
         if self.target_marker_id is not None:
-            p.removeBody(self.target_marker_id, physicsClientId=self.CLIENT)
+            try:
+                p.removeBody(self.target_marker_id, physicsClientId=self.CLIENT)
+            except:
+                pass
         if self.success_sphere_id is not None:
-            p.removeBody(self.success_sphere_id, physicsClientId=self.CLIENT)
+            try:
+                p.removeBody(self.success_sphere_id, physicsClientId=self.CLIENT)
+            except:
+                pass
         
         # Create target marker (red dot)
         target_visual = p.createVisualShape(
             shapeType=p.GEOM_SPHERE,
-            radius=0.02,
+            radius=0.03,
             rgbaColor=[1, 0, 0, 1],
             physicsClientId=self.CLIENT
         )
@@ -109,7 +137,7 @@ class AutoDroneAviaryGui(AutoDroneAviary):
         success_visual = p.createVisualShape(
             shapeType=p.GEOM_SPHERE,
             radius=self.SUCCESS_THRESHOLD,
-            rgbaColor=[1, 0, 0, 0.2],
+            rgbaColor=[1, 0, 0, 0.15],
             physicsClientId=self.CLIENT
         )
         

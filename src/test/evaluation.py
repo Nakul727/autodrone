@@ -57,7 +57,7 @@ def evaluate_model(model_path, n_episodes=5, gui=True):
             done = terminated or truncated
             
             if gui:
-                time.sleep(0.005)
+                time.sleep(0.02)
         
         episode_rewards.append(episode_reward)
         is_success = info.get('is_success', False)
