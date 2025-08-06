@@ -5,7 +5,6 @@ Provides point-to-point navigation task for reinforcement learning.
 """
 
 import numpy as np
-import pybullet as p
 import gymnasium as gym
 from gymnasium import spaces
 from typing import Dict, Any, Optional, Tuple
@@ -32,27 +31,32 @@ class AutoDroneAviary(BaseRLAviary):
         target_bounds: Optional[np.ndarray] = None,
         success_threshold: float = 0.1,
         episode_len_sec: int = 15,
+        random_xyz: bool = True,
+        start_bounds: Optional[np.ndarray] = None,
     ) -> None: 
         """
         Initialize AutoDroneAviary environment.
         """
-
-        # Target generation bounds
-        self.TARGET_BOUNDS = target_bounds if target_bounds is not None else \
-        np.array([[-2.0, 2.0], [-2.0, 2.0], [0.2, 2.0]])
-    
         # Episode constants
         self.SUCCESS_THRESHOLD = success_threshold
         self.EPISODE_LEN_SEC = episode_len_sec
 
+        # Initial position
+        self.RANDOM_XYZ = random_xyz
+        self.START_BOUNDS = start_bounds if start_bounds is not None else \
+        np.array([[-1.5, 1.5], [-1.5, 1.5], [0.3, 1.0]])
+        
+        # Store the original initial_xyzs for when random_xyz is disabled
+        self.BASE_INITIAL_XYZS = initial_xyzs
+
+        # Target generation
+        self.TARGET_BOUNDS = target_bounds if target_bounds is not None else \
+        np.array([[-2.0, 2.0], [-2.0, 2.0], [0.2, 2.0]])
+    
         # Target state variables
         self.current_target = None
         self.initial_distance = None
         self.best_distance = float('inf')
-
-        # Target GUI elements
-        self.target_marker_id = None
-        self.success_sphere_id = None
 
         super().__init__(
             drone_model=drone_model,
@@ -70,10 +74,22 @@ class AutoDroneAviary(BaseRLAviary):
 
     def reset(self, seed: Optional[int] = None, options: Optional[Dict] = None) -> Tuple[np.ndarray, Dict]:
         """
-        Reset environment and generate new target.
+        Reset environment and generate new target and optional random start position.
         """
         if seed is not None:
             np.random.seed(seed)
+        
+        # Generate random initial position if enabled
+        if self.RANDOM_XYZ:
+            random_start = np.array([
+                np.random.uniform(self.START_BOUNDS[0][0], self.START_BOUNDS[0][1]),
+                np.random.uniform(self.START_BOUNDS[1][0], self.START_BOUNDS[1][1]),
+                np.random.uniform(self.START_BOUNDS[2][0], self.START_BOUNDS[2][1])
+            ]).reshape(1, 3)
+            
+            # Temporarily override the initial position
+            original_init_xyzs = self.INIT_XYZS.copy()
+            self.INIT_XYZS = random_start
         
         # Generate random target
         self.current_target = np.array([
@@ -84,8 +100,9 @@ class AutoDroneAviary(BaseRLAviary):
         
         obs, info = super().reset(seed=seed, options=options)
         
-        if self.GUI:
-            self._add_target_markers()
+        # Restore original initial position if we modified it
+        if self.RANDOM_XYZ:
+            self.INIT_XYZS = original_init_xyzs
         
         # Initialize distance tracking
         drone_pos = self._getDroneStateVector(0)[0:3]
@@ -94,8 +111,10 @@ class AutoDroneAviary(BaseRLAviary):
         
         info.update({
             'target_position': self.current_target.copy(),
+            'start_position': drone_pos.copy(),
             'initial_distance': self.initial_distance,
-            'success_threshold': self.SUCCESS_THRESHOLD
+            'success_threshold': self.SUCCESS_THRESHOLD,
+            'random_start_enabled': self.RANDOM_XYZ
         })
         
         return obs, info
@@ -252,7 +271,8 @@ class AutoDroneAviary(BaseRLAviary):
             'success_threshold': self.SUCCESS_THRESHOLD,
             'is_success': at_target,
             'at_target': at_target,
-            'hover_quality': max(0, 1.0 - speed) if at_target else 0.0
+            'hover_quality': max(0, 1.0 - speed) if at_target else 0.0,
+            'random_start_enabled': self.RANDOM_XYZ
         }
     
     def set_target(self, target_position: np.ndarray) -> None:
@@ -260,52 +280,9 @@ class AutoDroneAviary(BaseRLAviary):
         Manually set target position.
         """
         self.current_target = np.array(target_position)
-        if self.GUI:
-            self._add_target_markers()
    
     def get_target(self) -> np.ndarray:
         """
         Get current target position.
         """
         return self.current_target.copy() if self.current_target is not None else None
-    
-    def _add_target_markers(self):
-        """Add visual markers for target position and success threshold."""
-        if not self.GUI or self.current_target is None:
-            return
-            
-        # Remove existing markers
-        if self.target_marker_id is not None:
-            p.removeBody(self.target_marker_id, physicsClientId=self.CLIENT)
-        if self.success_sphere_id is not None:
-            p.removeBody(self.success_sphere_id, physicsClientId=self.CLIENT)
-        
-        # Create target marker (red dot)
-        target_visual = p.createVisualShape(
-            shapeType=p.GEOM_SPHERE,
-            radius=0.02,
-            rgbaColor=[1, 0, 0, 1],
-            physicsClientId=self.CLIENT
-        )
-        
-        self.target_marker_id = p.createMultiBody(
-            baseMass=0,
-            baseVisualShapeIndex=target_visual,
-            basePosition=self.current_target,
-            physicsClientId=self.CLIENT
-        )
-        
-        # Create success sphere (transparent red)
-        success_visual = p.createVisualShape(
-            shapeType=p.GEOM_SPHERE,
-            radius=self.SUCCESS_THRESHOLD,
-            rgbaColor=[1, 0, 0, 0.2],
-            physicsClientId=self.CLIENT
-        )
-        
-        self.success_sphere_id = p.createMultiBody(
-            baseMass=0,
-            baseVisualShapeIndex=success_visual,
-            basePosition=self.current_target,
-            physicsClientId=self.CLIENT
-        )
