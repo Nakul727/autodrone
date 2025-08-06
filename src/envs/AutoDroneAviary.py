@@ -5,7 +5,6 @@ Provides point-to-point navigation task for reinforcement learning.
 """
 
 import numpy as np
-import pybullet as p
 import gymnasium as gym
 from gymnasium import spaces
 from typing import Dict, Any, Optional, Tuple
@@ -59,10 +58,6 @@ class AutoDroneAviary(BaseRLAviary):
         self.initial_distance = None
         self.best_distance = float('inf')
 
-        # Target GUI elements
-        self.target_marker_id = None
-        self.success_sphere_id = None
-
         super().__init__(
             drone_model=drone_model,
             num_drones=1,
@@ -108,9 +103,6 @@ class AutoDroneAviary(BaseRLAviary):
         # Restore original initial position if we modified it
         if self.RANDOM_XYZ:
             self.INIT_XYZS = original_init_xyzs
-        
-        if self.GUI:
-            self._add_target_markers()
         
         # Initialize distance tracking
         drone_pos = self._getDroneStateVector(0)[0:3]
@@ -288,52 +280,9 @@ class AutoDroneAviary(BaseRLAviary):
         Manually set target position.
         """
         self.current_target = np.array(target_position)
-        if self.GUI:
-            self._add_target_markers()
    
     def get_target(self) -> np.ndarray:
         """
         Get current target position.
         """
         return self.current_target.copy() if self.current_target is not None else None
-    
-    def _add_target_markers(self):
-        """Add visual markers for target position and success threshold."""
-        if not self.GUI or self.current_target is None:
-            return
-            
-        # Remove existing markers
-        if self.target_marker_id is not None:
-            p.removeBody(self.target_marker_id, physicsClientId=self.CLIENT)
-        if self.success_sphere_id is not None:
-            p.removeBody(self.success_sphere_id, physicsClientId=self.CLIENT)
-        
-        # Create target marker (red dot)
-        target_visual = p.createVisualShape(
-            shapeType=p.GEOM_SPHERE,
-            radius=0.02,
-            rgbaColor=[1, 0, 0, 1],
-            physicsClientId=self.CLIENT
-        )
-        
-        self.target_marker_id = p.createMultiBody(
-            baseMass=0,
-            baseVisualShapeIndex=target_visual,
-            basePosition=self.current_target,
-            physicsClientId=self.CLIENT
-        )
-        
-        # Create success sphere (transparent red)
-        success_visual = p.createVisualShape(
-            shapeType=p.GEOM_SPHERE,
-            radius=self.SUCCESS_THRESHOLD,
-            rgbaColor=[1, 0, 0, 0.2],
-            physicsClientId=self.CLIENT
-        )
-        
-        self.success_sphere_id = p.createMultiBody(
-            baseMass=0,
-            baseVisualShapeIndex=success_visual,
-            basePosition=self.current_target,
-            physicsClientId=self.CLIENT
-        )
