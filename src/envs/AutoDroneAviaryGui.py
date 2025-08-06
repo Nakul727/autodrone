@@ -1,7 +1,6 @@
 """
 AutoDroneAviaryGui.py
 GUI wrapper for AutoDroneAviary that handles all visual elements.
-Provides target markers and visual feedback for the drone environment.
 """
 
 import numpy as np
@@ -12,7 +11,7 @@ from gym_pybullet_drones.utils.enums import DroneModel, Physics, ActionType, Obs
 
 class AutoDroneAviaryGui(AutoDroneAviary):
     """
-    GUI-enabled version of AutoDroneAviary with visual target markers and flight path.
+    GUI version of AutoDroneAviary with visual target markers and flight path.
     """
 
     def __init__(
@@ -23,7 +22,7 @@ class AutoDroneAviaryGui(AutoDroneAviary):
         physics: Physics=Physics.PYB,
         pyb_freq: int = 240,
         ctrl_freq: int = 30,
-        gui: bool = True,  # Default to True for GUI class
+        gui: bool = True,       # Default gui = True
         record: bool = False,
         obs: ObservationType=ObservationType.KIN,
         act: ActionType=ActionType.RPM,
@@ -49,7 +48,7 @@ class AutoDroneAviaryGui(AutoDroneAviary):
         self.path_line_ids = []
         self.last_position = None
 
-        # Force GUI = True
+        # Force gui = True
         super().__init__(
             drone_model=drone_model,
             initial_xyzs=initial_xyzs,
@@ -68,7 +67,7 @@ class AutoDroneAviaryGui(AutoDroneAviary):
             start_bounds=start_bounds
         )
         
-        # Configure clean GUI after initialization
+        # Configure clean GUI
         self._configure_clean_gui()
 
     def _configure_clean_gui(self):
@@ -76,12 +75,12 @@ class AutoDroneAviaryGui(AutoDroneAviary):
         if not self.GUI:
             return
             
-        # Remove all side panels and debug info 
+        # Remove all side panels gui, wireframe, shadows etc. 
         p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0, physicsClientId=self.CLIENT)
         p.configureDebugVisualizer(p.COV_ENABLE_WIREFRAME, 0, physicsClientId=self.CLIENT)
         p.configureDebugVisualizer(p.COV_ENABLE_SHADOWS, 0, physicsClientId=self.CLIENT)
         
-        # Set camera for optimal square view
+        # Set camera
         p.resetDebugVisualizerCamera(
             cameraDistance=3.0,
             cameraYaw=45,
@@ -92,14 +91,13 @@ class AutoDroneAviaryGui(AutoDroneAviary):
 
     def reset(self, seed: Optional[int] = None, options: Optional[Dict] = None) -> Tuple[np.ndarray, Dict]:
         """
-        Reset environment and add visual target markers.
+        Reset environment.
         """
         obs, info = super().reset(seed=seed, options=options)
-        
-        # Clear flight path
-        self._clear_flight_path()
-        
-        # Add target markers
+
+        if self.GUI and self.show_flight_path:
+            self._clear_flight_path()
+
         if self.GUI:
             self._add_target_markers()
         
@@ -111,7 +109,6 @@ class AutoDroneAviaryGui(AutoDroneAviary):
         """
         obs, reward, terminated, truncated, info = super().step(action)
         
-        # Update flight path
         if self.GUI and self.show_flight_path:
             self._update_flight_path()
         
@@ -126,7 +123,9 @@ class AutoDroneAviaryGui(AutoDroneAviary):
             self._add_target_markers()
 
     def _add_target_markers(self):
-        """Add visual markers for target position and success threshold."""
+        """
+        Add visual markers for target position and success threshold
+        """
         if not self.GUI or self.current_target is None:
             return
             
@@ -180,16 +179,17 @@ class AutoDroneAviaryGui(AutoDroneAviary):
         )
 
     def _update_flight_path(self):
-        """Update the flight path visualization with current drone position."""
+        """
+        Update the flight path visualization with current drone position
+        """
         if not self.GUI or not self.show_flight_path:
             return
 
         state = self._getDroneStateVector(0)
         current_pos = state[0:3].copy()
         
-        # Only add new line segment if we have a previous position
         if self.last_position is not None:
-            # Draw line segment from last position to current position
+            # Draw line from last position to current position
             line_id = p.addUserDebugLine(
                 lineFromXYZ=self.last_position,
                 lineToXYZ=current_pos,
@@ -200,10 +200,10 @@ class AutoDroneAviaryGui(AutoDroneAviary):
             )
             self.path_line_ids.append(line_id)
         
-        # Update last position for next segment
+        # Update last position
         self.last_position = current_pos.copy()
         
-        # Optional: Limit total number of line segments to prevent memory issues
+        # Limit total number of line segmements
         if len(self.path_line_ids) > self.path_length:
             # Remove oldest line segment
             try:
