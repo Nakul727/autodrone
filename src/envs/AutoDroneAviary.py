@@ -32,19 +32,28 @@ class AutoDroneAviary(BaseRLAviary):
         target_bounds: Optional[np.ndarray] = None,
         success_threshold: float = 0.1,
         episode_len_sec: int = 15,
+        random_xyz: bool = True,
+        start_bounds: Optional[np.ndarray] = None,
     ) -> None: 
         """
         Initialize AutoDroneAviary environment.
         """
-
-        # Target generation bounds
-        self.TARGET_BOUNDS = target_bounds if target_bounds is not None else \
-        np.array([[-2.0, 2.0], [-2.0, 2.0], [0.2, 2.0]])
-    
         # Episode constants
         self.SUCCESS_THRESHOLD = success_threshold
         self.EPISODE_LEN_SEC = episode_len_sec
 
+        # Initial position
+        self.RANDOM_XYZ = random_xyz
+        self.START_BOUNDS = start_bounds if start_bounds is not None else \
+        np.array([[-1.5, 1.5], [-1.5, 1.5], [0.3, 1.0]])
+        
+        # Store the original initial_xyzs for when random_xyz is disabled
+        self.BASE_INITIAL_XYZS = initial_xyzs
+
+        # Target generation
+        self.TARGET_BOUNDS = target_bounds if target_bounds is not None else \
+        np.array([[-2.0, 2.0], [-2.0, 2.0], [0.2, 2.0]])
+    
         # Target state variables
         self.current_target = None
         self.initial_distance = None
@@ -70,10 +79,22 @@ class AutoDroneAviary(BaseRLAviary):
 
     def reset(self, seed: Optional[int] = None, options: Optional[Dict] = None) -> Tuple[np.ndarray, Dict]:
         """
-        Reset environment and generate new target.
+        Reset environment and generate new target and optional random start position.
         """
         if seed is not None:
             np.random.seed(seed)
+        
+        # Generate random initial position if enabled
+        if self.RANDOM_XYZ:
+            random_start = np.array([
+                np.random.uniform(self.START_BOUNDS[0][0], self.START_BOUNDS[0][1]),
+                np.random.uniform(self.START_BOUNDS[1][0], self.START_BOUNDS[1][1]),
+                np.random.uniform(self.START_BOUNDS[2][0], self.START_BOUNDS[2][1])
+            ]).reshape(1, 3)
+            
+            # Temporarily override the initial position
+            original_init_xyzs = self.INIT_XYZS.copy()
+            self.INIT_XYZS = random_start
         
         # Generate random target
         self.current_target = np.array([
@@ -83,6 +104,10 @@ class AutoDroneAviary(BaseRLAviary):
         ])
         
         obs, info = super().reset(seed=seed, options=options)
+        
+        # Restore original initial position if we modified it
+        if self.RANDOM_XYZ:
+            self.INIT_XYZS = original_init_xyzs
         
         if self.GUI:
             self._add_target_markers()
@@ -94,8 +119,10 @@ class AutoDroneAviary(BaseRLAviary):
         
         info.update({
             'target_position': self.current_target.copy(),
+            'start_position': drone_pos.copy(),
             'initial_distance': self.initial_distance,
-            'success_threshold': self.SUCCESS_THRESHOLD
+            'success_threshold': self.SUCCESS_THRESHOLD,
+            'random_start_enabled': self.RANDOM_XYZ
         })
         
         return obs, info
@@ -252,7 +279,8 @@ class AutoDroneAviary(BaseRLAviary):
             'success_threshold': self.SUCCESS_THRESHOLD,
             'is_success': at_target,
             'at_target': at_target,
-            'hover_quality': max(0, 1.0 - speed) if at_target else 0.0
+            'hover_quality': max(0, 1.0 - speed) if at_target else 0.0,
+            'random_start_enabled': self.RANDOM_XYZ
         }
     
     def set_target(self, target_position: np.ndarray) -> None:
