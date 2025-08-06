@@ -45,7 +45,7 @@ def evaluate_model(model_path, n_episodes=5, gui=True):
         obs, info = env.reset()
         episode_reward = 0.0
         done = False
-        
+
         print(f"Episode {episode + 1}/{n_episodes}")
         print(f"Target: {info['target_position']}")
         print(f"Start: {info['start_position']}")
@@ -89,14 +89,16 @@ def evaluate_headless(model_path, n_episodes=100):
     return evaluate_model(model_path, n_episodes=n_episodes, gui=False)
 
 if __name__ == "__main__":
-    model_path = input("Enter model path: ").strip()
+    model_path = input("\nEnter model path: ").strip()
     
     # Ask user for evaluation mode
     mode = input("Choose mode: (1) GUI visualization (2) Headless fast evaluation: ").strip()
     
     if mode == "2":
         n_episodes = int(input("Number of episodes (default 100): ") or "100")
+        print('\n')
         evaluate_headless(model_path, n_episodes)
     else:
         n_episodes = int(input("Number of episodes (default 5): ") or "5")
+        print('\n')
         evaluate_model(model_path, n_episodes, gui=True)
