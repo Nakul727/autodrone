@@ -213,18 +213,18 @@ class AutoDroneAviary(BaseRLAviary):
         roll, pitch = state[7], state[8]
         if abs(roll) > 0.4 or abs(pitch) > 0.4:
             return True
-        
+
         # Time limit exceeded
         # Convert step counter to elapsed time and check against episode limit
         if self.step_counter / self.PYB_FREQ > self.EPISODE_LEN_SEC:
             return True
-            
+        
         # Distance failure (too far from target)
         # Max allowed distance = 6 meters (manually set)
         distance = np.linalg.norm(self.current_target - current_pos)
         if distance > 6.0:
             return True
-            
+
         # Speed failure (moving too fast)
         # Max velocity = 10 ms/s
         velocity = state[10:13]

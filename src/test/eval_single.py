@@ -1,8 +1,15 @@
-import time
 import numpy as np
-from helper import init_pos
+import time
+from stable_baselines3 import PPO
+import helper as hp
+import argparse
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
+from src.envs.AutoDroneAviary import AutoDroneAviary
+from src.envs.AutoDroneAviaryGui import AutoDroneAviaryGui
 
-def evaluate_single(model, env, episodes, speed, start_pos=None):
+def evaluate_single(model, env, episodes, speed):
     """
     Evaluates a model over a number of individual episodes.
     
@@ -17,7 +24,6 @@ def evaluate_single(model, env, episodes, speed, start_pos=None):
     rewards = []
 
     for ep in range(episodes):
-        env.INIT_XYZS = init_pos(start_pos)
 
         obs, info = env.reset()
         total_reward = 0
@@ -40,4 +46,23 @@ def evaluate_single(model, env, episodes, speed, start_pos=None):
     print(f"Success Rate: {success_count}/{episodes} = {success_count / episodes:.2%}")
     print(f"Average Reward: {np.mean(rewards):.2f}")
     print("\n--------------------------")
+
+def main():
+    """
+    Main entry point for evaluation.
+    Determines whether to use CLI args or prompt-based input,
+    loads the trained model, and runs evaluation based on the task.
+    """
+    args = hp.parse_args() if len(sys.argv) > 1 else hp.prompt_args("eval_single")
+
+    model = PPO.load(args.model_path)
+
+    env = hp.create_env(gui=args.gui)
+
+    evaluate_single(model, env, args.episodes, args.speed)
+
+    env.close()
+
+if __name__ == "__main__":
+    main()
 

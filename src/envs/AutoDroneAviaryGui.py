@@ -40,6 +40,9 @@ class AutoDroneAviaryGui(AutoDroneAviary):
         # Target GUI elements
         self.target_marker_id = None
         self.success_sphere_id = None
+        self.past_checkpoint_ids = []
+        self.success_marker_placed = False
+
         
         # Flight path visualization
         self.show_flight_path = show_flight_path
@@ -93,6 +96,7 @@ class AutoDroneAviaryGui(AutoDroneAviary):
         """
         Reset environment.
         """
+        self.success_marker_placed = False
         obs, info = super().reset(seed=seed, options=options)
 
         if self.GUI and self.show_flight_path:
@@ -108,6 +112,14 @@ class AutoDroneAviaryGui(AutoDroneAviary):
         Step the environment and update flight path visualization.
         """
         obs, reward, terminated, truncated, info = super().step(action)
+        # Leave a checkpoint marker if goal is reached
+        if self.GUI and info.get("is_success", False):
+            state = self._getDroneStateVector(0)
+            current_pos = state[0:3].copy()
+            if not self.success_marker_placed:
+                self._add_checkpoint_marker(current_pos)
+            self.success_marker_placed = True
+
         
         if self.GUI and self.show_flight_path:
             self._update_flight_path()
@@ -194,7 +206,7 @@ class AutoDroneAviaryGui(AutoDroneAviary):
                 lineFromXYZ=self.last_position,
                 lineToXYZ=current_pos,
                 lineColorRGB=[0.8, 0.2, 0.2],
-                lineWidth=8.0,
+                lineWidth=12.0,
                 lifeTime=0,
                 physicsClientId=self.CLIENT
             )
@@ -204,6 +216,7 @@ class AutoDroneAviaryGui(AutoDroneAviary):
         self.last_position = current_pos.copy()
         
         # Limit total number of line segmements
+        '''
         if len(self.path_line_ids) > self.path_length:
             # Remove oldest line segment
             try:
@@ -211,6 +224,7 @@ class AutoDroneAviaryGui(AutoDroneAviary):
             except:
                 pass
             self.path_line_ids.pop(0)
+        '''
 
     def _clear_flight_path(self):
         """Clear the flight path visualization."""
@@ -227,3 +241,20 @@ class AutoDroneAviaryGui(AutoDroneAviary):
         # Reset path data
         self.path_line_ids.clear()
         self.last_position = None
+
+    def _add_checkpoint_marker(self, position: np.ndarray):
+        """Add a small persistent sphere at the given position."""
+        marker_visual = p.createVisualShape(
+            shapeType=p.GEOM_SPHERE,
+            radius=0.02,  # Small dot
+            rgbaColor=[0, 1, 0, 1],  # Green color
+            physicsClientId=self.CLIENT
+        )
+        marker_id = p.createMultiBody(
+            baseMass=0,
+            baseVisualShapeIndex=marker_visual,
+            basePosition=position,
+            physicsClientId=self.CLIENT
+        )
+        self.past_checkpoint_ids.append(marker_id)
+
