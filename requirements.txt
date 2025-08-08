@@ -1,5 +1,9 @@
-stable-baselines3
-gymnasium
-cycler
-transforms3d
-gym
+gymnasium==0.29.1
+numpy==1.26.4
+pandas==2.3.1
+pytest==8.4.1
+scipy==1.16.1
+stable_baselines3==2.7.0
+tensorboard==2.20.0
+tqdm==4.67.1
+transforms3d==0.4.2
