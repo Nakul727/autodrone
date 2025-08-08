@@ -7,7 +7,7 @@ import os
 import time
 from datetime import datetime
 
-from setup_training import (
+from train_helpers import (
     setup_directories, 
     setup_environments, 
     setup_callbacks, 

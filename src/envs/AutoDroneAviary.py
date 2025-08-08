@@ -156,16 +156,16 @@ class AutoDroneAviary(BaseRLAviary):
         Define observation space including target position.
         """
         base_obs_space = super()._observationSpace()
-        
+
         low = np.concatenate([
-            base_obs_space.low.flatten(),
-            np.array([-self.MAX_RELATIVE_DISTANCE, -self.MAX_RELATIVE_DISTANCE, -self.MAX_RELATIVE_DISTANCE])
-        ])
+            base_obs_space.low,
+            np.array([[-self.MAX_RELATIVE_DISTANCE, -self.MAX_RELATIVE_DISTANCE, -self.MAX_RELATIVE_DISTANCE]])
+        ], axis=1)
         
         high = np.concatenate([
-            base_obs_space.high.flatten(),
-            np.array([self.MAX_RELATIVE_DISTANCE, self.MAX_RELATIVE_DISTANCE, self.MAX_RELATIVE_DISTANCE])
-        ])
+            base_obs_space.high,
+            np.array([[self.MAX_RELATIVE_DISTANCE, self.MAX_RELATIVE_DISTANCE, self.MAX_RELATIVE_DISTANCE]])
+        ], axis=1)
         
         return spaces.Box(low=low, high=high, dtype=np.float32)
 
@@ -174,10 +174,13 @@ class AutoDroneAviary(BaseRLAviary):
         Compute observation including drone state and relative target position.
         """
         drone_obs = super()._computeObs()
-        
+
         drone_pos = self._getDroneStateVector(0)[0:3]
         relative_target = self.current_target - drone_pos
-        return np.concatenate([drone_obs.flatten(), relative_target]).astype(np.float32)
+        relative_target_2d = relative_target.reshape(1, 3)
+        final_obs = np.concatenate([drone_obs, relative_target_2d], axis=1).astype(np.float32)
+
+        return final_obs
     
     def _computeReward(self):
         """

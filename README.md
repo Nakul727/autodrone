@@ -1,34 +1,23 @@
-# CMPT 310 Group Project
+# AutoDrone
 
 ## Project Installation
 
-### Install Repository
-
 ```zsh
-# Clone the repository
 git clone git@github.com:Nakul727/autodrone.git
 cd autodrone
-
-# Initialize the submodules
 git submodule update --init --recursive
 ```
 
-### Install Conda Virtual Environment
+<br>
+
+We need Python<=3.11 to install pybullet. To use this specific version of python and install
+other fixed version for modules, we will use `conda` to manage our environment. Please have conda installed.
+The gym-pybullet-drones will be installed as a submodule.
+
+<br>
 
 ```zsh
-# Create the environment and install packages with compatible versions
-conda create -n autodrone python=3.11 pybullet -c conda-forge -y
-
-# Activate the new environment
+conda env create -f environment.yml
 conda activate autodrone
-```
-
-### Install Requirements
-
-```zsh
-# 1. Install the local submodule whithout its dependencies
 pip install --no-deps -e gym-pybullet-drones/
-
-# 2. Install the remaining Python-only packages
-pip install -r requirements.txt
 ```

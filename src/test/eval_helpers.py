@@ -1,3 +1,8 @@
+"""
+helpers.py
+
+"""
+
 import numpy as np
 import argparse
 import sys
@@ -8,15 +13,7 @@ from src.envs.AutoDroneAviaryGui import AutoDroneAviaryGui
 
 def create_env(gui=False):
     """
-    Creates the drone environment with standard settings.
-
-    Args:
-        gui: Enable GUI display.
-        record: Enable recording (if implemented).
-        start: Optional start position override.
-
-    Returns:
-        Configured AutoDroneAviary environment.
+    Create AutoDroneAviary environment with or without GUI
     """
     if gui:
         # Use GUI version with visual target markers
@@ -25,7 +22,7 @@ def create_env(gui=False):
             target_bounds=np.array([[-1.0, 1.0], [-1.0, 1.0], [0.5, 1.5]]),
             success_threshold=0.15,
             episode_len_sec=12,
-            #random_xyz=False
+            random_xyz=False
         )
     else:
         # Use headless version for fast evaluation
@@ -33,15 +30,13 @@ def create_env(gui=False):
             gui=False,
             target_bounds=np.array([[-1.0, 1.0], [-1.0, 1.0], [0.5, 1.5]]),
             success_threshold=0.15,
-            episode_len_sec=12
+            episode_len_sec=12,
+            random_xyz=False
         )
 
 def parse_args():
     """
     Parses command-line arguments for evaluation.
-
-    Returns:
-        argparse.Namespace with parsed values.
     """
     parser = argparse.ArgumentParser(description="Evaluate trained drone policies.")
     parser.add_argument("model_path", nargs='?', help="Path to trained model")
@@ -56,39 +51,37 @@ def parse_args():
 def prompt_args(task):
     """
     Prompts the user interactively for evaluation configuration.
-
-    Returns:
-        argparse.Namespace with collected values.
     """
-    print("==== AutoDrone Evaluation Interface ====")
+    print("\n")
+    print("=" * 50)
+    print("AUTODRONE EVALUATION")
+    print("=" * 50)
 
     model_path = input("Enter model path (e.g. ./models/autodrone.zip): ").strip()
 
-    episodes, targets = 5, 6
+    n_episodes = 5
+    n_targets = 6
     if task == "evaluate_sequence":
         try:
-            targets = int(input("Number of targets (default: 6): ").strip() or 6)
+            n_targets = int(input("Number of targets (default: 6): ").strip() or 6)
         except:
-            targets = 6
+            n_targets = 6
     else:
         try:
-            episodes = int(input("Number of episodes (default: 5): ").strip() or 5)
+            n_episodes = int(input("Number of episodes (default: 5): ").strip() or 5)
         except:
-            episodes = 5
+            n_episodes = 5
 
-    gui = input("Choose mode: (1) GUI visualization (2) Headless fast evaluation:: ").strip().lower() == "1"
-
+    gui = input("Choose mode: (1) GUI visualization (2) Headless fast evaluation: ").strip().lower() == "1"
     try:
         speed = float(input("Step speed in seconds (default: 0.01): ").strip() or 0.01)
     except:
         speed = 0.01
 
-
     return argparse.Namespace(
         model_path=model_path,
-        episodes=episodes,
-        targets=targets,
+        n_episodes=n_episodes,
+        n_targets=n_targets,
         gui=gui,
         speed=speed,
     )
-

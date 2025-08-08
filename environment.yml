@@ -1,0 +1,19 @@
+name: autodrone
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - pybullet
+  - pip
+  - pip:
+    - gymnasium
+    - stable-baselines3
+    - tensorboard
+    - numpy
+    - scipy
+    - pandas
+    - tqdm
+    - transforms3d
+    - pytest
+    - matplotlib
