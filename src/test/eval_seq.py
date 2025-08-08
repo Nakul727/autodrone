@@ -41,6 +41,10 @@ def evaluate_sequence(model, env, n_targets, speed, gui):
     print(f"Start position: {info.get('start_position', 'Unknown')}")
     print("-" * 50)
 
+    # Since we are running a single episode for multiple target
+    # Increase episode length so it doesn't timeout
+    env.EPISODE_LEN_SEC = 500000
+
     for target_idx, waypoint in enumerate(waypoints):
         env.set_target(waypoint)
         target_reward = 0

@@ -1,6 +1,6 @@
 """
-helpers.py
-
+eval_helpers.py
+Helper functions to create env and parse user command line args
 """
 
 import numpy as np
@@ -40,8 +40,8 @@ def parse_args():
     """
     parser = argparse.ArgumentParser(description="Evaluate trained drone policies.")
     parser.add_argument("model_path", nargs='?', help="Path to trained model")
-    parser.add_argument("--episodes", type=int, default=5, help="Number of episodes to run")
-    parser.add_argument("--targets", type=int, default=6, help="Number of targets")
+    parser.add_argument("--n_episodes", type=int, default=5, help="Number of episodes to run")
+    parser.add_argument("--n_targets", type=int, default=6, help="Number of targets")
     parser.add_argument("--gui", action="store_true", help="Choose mode: (1) GUI visualization (2) Headless fast evaluation:")
     parser.add_argument("--speed", type=float, default=0.01, help="Delay per step (in seconds)")
     
