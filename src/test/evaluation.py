@@ -27,7 +27,8 @@ def create_evaluation_env(gui=False):
             gui=False,
             target_bounds=np.array([[-1.0, 1.0], [-1.0, 1.0], [0.5, 1.5]]),
             success_threshold=0.15,
-            episode_len_sec=12
+            episode_len_sec=12,
+            random_xyz=False
         )
 
 def evaluate_model(model_path, n_episodes=5, gui=True):
@@ -40,6 +41,7 @@ def evaluate_model(model_path, n_episodes=5, gui=True):
     # Evaluation metrics
     episode_rewards = []
     success_count = 0
+    failure_reasons = {} 
     
     for episode in range(n_episodes):
         obs, info = env.reset()
@@ -60,12 +62,38 @@ def evaluate_model(model_path, n_episodes=5, gui=True):
                 time.sleep(0.02)
         
         episode_rewards.append(episode_reward)
-        is_success = info.get('is_success', False)
+        
+        # Use info to determine success (distance-based, not termination-based)
+        final_distance = info.get('distance_to_target', float('inf'))
+        is_success = final_distance < 0.15  # Use your success threshold
+        
+        # Get episode ending reason
+        termination_reason = info.get('termination_reason', None)
+        truncation_reason = info.get('truncation_reason', None)
+        
+        # Determine success based on final distance, not termination type
         if is_success:
             success_count += 1
+            if truncation_reason == "time_limit":
+                ending_reason = f"SUCCESS: reached target (time_limit)"
+            elif terminated and termination_reason:
+                ending_reason = f"SUCCESS: {termination_reason}"
+            else:
+                ending_reason = f"SUCCESS: reached target"
+        else:
+            # Only count as failure if didn't reach target
+            if truncation_reason and truncation_reason != "time_limit":
+                ending_reason = f"FAILURE: {truncation_reason}"
+                failure_reasons[truncation_reason] = failure_reasons.get(truncation_reason, 0) + 1
+            else:
+                ending_reason = f"FAILURE: did not reach target"
+                failure_reasons["target_not_reached"] = failure_reasons.get("target_not_reached", 0) + 1
         
-        print(f"Episode {episode + 1} - Success: {is_success}, Reward: {episode_reward:.2f}")
-        print(f"Final distance: {info.get('distance_to_target', 0):.3f}m")
+        print(f"Episode {episode + 1} - {ending_reason}")
+        print(f"Reward: {episode_reward:.2f}")
+        print(f"Final distance: {final_distance:.3f}m")
+        print(f"Episode length: {info.get('episode_step', 0)} steps")
+        print(f"Time elapsed: {info.get('time_elapsed', 0):.2f}s")
         print("-" * 50)
     
     env.close()
@@ -78,6 +106,13 @@ def evaluate_model(model_path, n_episodes=5, gui=True):
     print(f"Success Rate: {success_rate:.1%} ({success_count}/{n_episodes})")
     print(f"Average Reward: {avg_reward:.2f}")
     print(f"Reward Range: {min(episode_rewards):.2f} to {max(episode_rewards):.2f}")
+    
+    # Show failure breakdown
+    if failure_reasons:
+        print(f"\n=== FAILURE BREAKDOWN ===")
+        for reason, count in sorted(failure_reasons.items(), key=lambda x: x[1], reverse=True):
+            percentage = (count / n_episodes) * 100
+            print(f"{reason}: {count} episodes ({percentage:.1f}%)")
     
     return success_rate, avg_reward
 

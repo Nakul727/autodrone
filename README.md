@@ -17,7 +17,7 @@ git submodule update --init --recursive
 
 ```zsh
 # Create the environment and install packages with compatible versions
-conda create -n autodrone python=3.11 pybullet numpy gymnasium pytest pandas matplotlib scipy -c conda-forge -y
+conda create -n autodrone python=3.11 pybullet -c conda-forge -y
 
 # Activate the new environment
 conda activate autodrone

@@ -2,3 +2,6 @@
 __pycache__/
 *.pyc
 *.zip
+src/train/logs
+src/train/graphs
+src/train/models
