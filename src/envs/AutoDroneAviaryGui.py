@@ -42,7 +42,6 @@ class AutoDroneAviaryGui(AutoDroneAviary):
         self.past_checkpoint_ids = []
         self.success_marker_placed = False
 
-        
         # Flight path visualization
         self.show_flight_path = show_flight_path
         self.path_length = path_length
@@ -111,17 +110,17 @@ class AutoDroneAviaryGui(AutoDroneAviary):
         Step the environment and update flight path visualization.
         """
         obs, reward, terminated, truncated, info = super().step(action)
+
+        if self.GUI and self.show_flight_path:
+            self._update_flight_path()
+        
         # Leave a checkpoint marker if goal is reached
-        if self.GUI and info.get("is_success", False):
+        if self.GUI and info.get("at_target", False):
             state = self._getDroneStateVector(0)
             current_pos = state[0:3].copy()
             if not self.success_marker_placed:
                 self._add_checkpoint_marker(current_pos)
             self.success_marker_placed = True
-
-        
-        if self.GUI and self.show_flight_path:
-            self._update_flight_path()
         
         return obs, reward, terminated, truncated, info
 
@@ -213,17 +212,6 @@ class AutoDroneAviaryGui(AutoDroneAviary):
         
         # Update last position
         self.last_position = current_pos.copy()
-        
-        # Limit total number of line segmements
-        '''
-        if len(self.path_line_ids) > self.path_length:
-            # Remove oldest line segment
-            try:
-                p.removeUserDebugItem(self.path_line_ids[0], physicsClientId=self.CLIENT)
-            except:
-                pass
-            self.path_line_ids.pop(0)
-        '''
 
     def _clear_flight_path(self):
         """Clear the flight path visualization."""

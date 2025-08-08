@@ -80,9 +80,6 @@ def evaluate_sequence(model, env, n_targets, speed, gui):
             else:
                 ending_reason = f"SUCCESS: reached target"
 
-            # Reset success marker for GUI visualization
-            if hasattr(env, 'success_marker_placed'):
-                env.success_marker_placed = False
         else:
             if truncation_reason and truncation_reason != "time_limit":
                 ending_reason = f"FAILURE: {truncation_reason}"
@@ -91,20 +88,23 @@ def evaluate_sequence(model, env, n_targets, speed, gui):
                 ending_reason = f"FAILURE: did not reach target"
                 failure_reasons["target_not_reached"] = failure_reasons.get("target_not_reached", 0) + 1
             
-            # Stop sequence on failure
+            # Stop episode on failure
             print(f"Target {target_idx + 1} - {ending_reason}")
             print(f"Reward: {target_reward:.2f}")
             print(f"Steps: {step_count}")
             print(f"Sequence stopped at target {target_idx + 1}")
             print("-" * 50)
             break
-        
-        # Summarize target
+                    
+        # Summarize episode
         print(f"Target {target_idx + 1} - {ending_reason}")
         print(f"Reward: {target_reward:.2f}")
         print(f"Steps: {step_count}")
         print("-" * 50)
 
+        if hasattr(env, 'success_marker_placed'):
+            env.success_marker_placed = False
+            
     # Summarize sequence results
     success_rate = success_count / n_targets
     avg_target_reward = np.mean(target_rewards) if target_rewards else 0.0
