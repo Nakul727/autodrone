@@ -13,7 +13,6 @@ class AutoDroneAviaryGui(AutoDroneAviary):
     """
     GUI version of AutoDroneAviary with visual target markers and flight path.
     """
-
     def __init__(
         self,
         drone_model: DroneModel=DroneModel.CF2X,
@@ -26,9 +25,9 @@ class AutoDroneAviaryGui(AutoDroneAviary):
         record: bool = False,
         obs: ObservationType=ObservationType.KIN,
         act: ActionType=ActionType.RPM,
-        target_bounds: Optional[np.ndarray] = None,
         success_threshold: float = 0.1,
         episode_len_sec: int = 15,
+        target_bounds: Optional[np.ndarray] = None,
         random_xyz: bool = True,
         start_bounds: Optional[np.ndarray] = None,
         show_flight_path: bool = True,
