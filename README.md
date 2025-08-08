@@ -1,5 +1,7 @@
 # AutoDrone
 
+“AutoDrone” is a simulated autonomous drone agent trained through reinforcement learning (RL) to perform point-to-point aerial navigation. A PPO learning algorithm is used to evolve the agent from a basic quadcopter platform into a competent navigator. The project offers a hands-on insight into AI agent training and forming a base for more complex systems. By leveraging RL, the approach  offers an alternative to traditional control system by allowing agents to learn through interaction rather than manual tuning. 
+
 https://github.com/user-attachments/assets/8908715b-f8a1-42b0-93a0-7b08307ad68c
 
 ## Project Installation
@@ -23,3 +25,7 @@ conda env create -f environment.yml
 conda activate autodrone
 pip install --no-deps -e gym-pybullet-drones/
 ```
+
+# Poster
+
+![AutoDrone Poster](assets/poster.png)
