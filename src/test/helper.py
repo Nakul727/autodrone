@@ -4,8 +4,9 @@ import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 from src.envs.AutoDroneAviary import AutoDroneAviary
+from src.envs.AutoDroneAviaryGui import AutoDroneAviaryGui
 
-def create_env(gui=False, record=False, start=None):
+def create_env(gui=False):
     """
     Creates the drone environment with standard settings.
 
@@ -17,32 +18,23 @@ def create_env(gui=False, record=False, start=None):
     Returns:
         Configured AutoDroneAviary environment.
     """
-    return AutoDroneAviary(
-        gui=gui,
-        record=record,
-        initial_xyzs=start,
-        target_bounds=np.array([[-1.0, 1.0], [-1.0, 1.0], [0.5, 1.5]]),
-        success_threshold=0.15,
-        episode_len_sec=12
-    )
-
-def init_pos(pos):
-    """
-    Converts a user-supplied tuple into a 1x3 array.
-    If None is given, generate a random position.
-
-    Args:
-        pos: Tuple or array of (x, y, z)
-
-    Returns:
-        Numpy array of shape (1, 3)
-    """
-    if pos is None:
-        return np.array([[np.random.uniform(-1.0, 1.0),
-                          np.random.uniform(-1.0, 1.0),
-                          np.random.uniform(0.3, 2.0)]])
+    if gui:
+        # Use GUI version with visual target markers
+        return AutoDroneAviaryGui(
+            gui=True,
+            target_bounds=np.array([[-1.0, 1.0], [-1.0, 1.0], [0.5, 1.5]]),
+            success_threshold=0.15,
+            episode_len_sec=12,
+            #random_xyz=False
+        )
     else:
-        return np.array([pos])
+        # Use headless version for fast evaluation
+        return AutoDroneAviary(
+            gui=False,
+            target_bounds=np.array([[-1.0, 1.0], [-1.0, 1.0], [0.5, 1.5]]),
+            success_threshold=0.15,
+            episode_len_sec=12
+        )
 
 def parse_args():
     """
@@ -53,17 +45,15 @@ def parse_args():
     """
     parser = argparse.ArgumentParser(description="Evaluate trained drone policies.")
     parser.add_argument("model_path", nargs='?', help="Path to trained model")
-    parser.add_argument("--task", choices=["evaluate_single", "evaluate_sequence"], default="evaluate_single", help="Task type")
-    parser.add_argument("--start_pos", type=lambda s: np.array(eval(s)), default=None,
-        help="""Starting position as a tuple, e.g. "(1.0, 1.0, 1.2)". Default random""")
     parser.add_argument("--episodes", type=int, default=5, help="Number of episodes to run")
     parser.add_argument("--targets", type=int, default=6, help="Number of targets")
-    parser.add_argument("--gui", action="store_true", help="Enable GUI")
+    parser.add_argument("--gui", action="store_true", help="Choose mode: (1) GUI visualization (2) Headless fast evaluation:")
     parser.add_argument("--speed", type=float, default=0.01, help="Delay per step (in seconds)")
-    parser.add_argument("--record", action="store_true", help="Enable recording (if implemented)")
-    return parser.parse_args()
+    
+    args = parser.parse_args()
+    return args
 
-def prompt_args():
+def prompt_args(task):
     """
     Prompts the user interactively for evaluation configuration.
 
@@ -73,20 +63,6 @@ def prompt_args():
     print("==== AutoDrone Evaluation Interface ====")
 
     model_path = input("Enter model path (e.g. ./models/autodrone.zip): ").strip()
-
-    task = input("Choose task [evaluate_single / evaluate_sequence] (default: evaluate_single): ").strip()
-    if task not in ["evaluate_single", "evaluate_sequence"]:
-        task = "evaluate_single"
-
-    start_pos_input = input('Enter start position as tuple (e.g. "1.0, 1.0, 1.2") (default: random): ').strip()
-    if start_pos_input is not None:
-        try:
-            start_pos = np.array([float(x) for x in start_pos_input.split(",")])
-        except:
-            print("Invalid format. Falling back to random start.")
-            start_pos = None
-    else:
-        start_pos = None
 
     episodes, targets = 5, 6
     if task == "evaluate_sequence":
@@ -100,23 +76,19 @@ def prompt_args():
         except:
             episodes = 5
 
-    gui = input("Enable GUI? [y/N]: ").strip().lower() == "y"
+    gui = input("Choose mode: (1) GUI visualization (2) Headless fast evaluation:: ").strip().lower() == "1"
 
     try:
         speed = float(input("Step speed in seconds (default: 0.01): ").strip() or 0.01)
     except:
         speed = 0.01
 
-    record = input("Enable recording? [y/N]: ").strip().lower() == "y"
 
     return argparse.Namespace(
         model_path=model_path,
-        task=task,
-        start_pos=start_pos,
         episodes=episodes,
         targets=targets,
         gui=gui,
         speed=speed,
-        record=record
     )
 

@@ -267,18 +267,18 @@ class AutoDroneAviary(BaseRLAviary):
         if abs(roll) > self.MAX_ROLL_PITCH or abs(pitch) > self.MAX_ROLL_PITCH:
             self.truncation_reason = "attitude_failure"
             return True
-        
+
         # Time limit exceeded
         if self.step_counter / self.PYB_FREQ > self.EPISODE_LEN_SEC:
             self.truncation_reason = "time_limit"
             return True
-            
+        
         # Distance failure (too far from target)
         distance = np.linalg.norm(self.current_target - current_pos)
         if distance > self.DISTANCE_FAILURE_LIMIT:
             self.truncation_reason = "distance_failure"
             return True
-            
+
         # Speed failure (moving too fast)
         velocity = state[10:13]
         speed = np.linalg.norm(velocity)
